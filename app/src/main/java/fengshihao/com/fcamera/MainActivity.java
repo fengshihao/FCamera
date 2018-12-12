@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity {
     Log.d(TAG, "onResume() called");
     mCamera.setCameraId("1");
     mCamera.setPreview(mCameraView);
-
+    mCamera.open();
   }
 
   @Override

@@ -1,6 +1,5 @@
 package fengshihao.com.fcameralib;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Objects;
 
@@ -13,6 +12,8 @@ import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.CaptureResult;
+import android.hardware.camera2.TotalCaptureResult;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.text.TextUtils;
@@ -68,43 +69,77 @@ class Camera2Wrapper implements ICamera {
   }
 
   private void startIfReady() {
-    if (mPreviewSurface == null || mCameraDevice == null) {
+    if (mPreviewSurface == null) {
+      Log.d(TAG, "startIfReady: mPreviewSurface is not ready");
+      return;
+    }
+
+    if (mCameraDevice == null) {
+      Log.d(TAG, "startIfReady: mCameraDevice is not ready");
       return;
     }
 
     Log.d(TAG, "startIfReady: ");
     prepareRequestBuilder();
 
-    mCameraDevice.createCaptureSession(Collections.singletonList(mPreviewSurface),
-        new CameraCaptureSession.StateCallback() {
+    try {
+      mCameraDevice.createCaptureSession(Collections.singletonList(mPreviewSurface),
+          new CameraCaptureSession.StateCallback() {
 
-          @Override
-          public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
-            // The camera is already closed
-            if (null == mCameraDevice) {
-              return;
+            @Override
+            public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
+              // The camera is already closed
+              if (null == mCameraDevice) {
+                return;
+              }
+
+              mCaptureSession = cameraCaptureSession;
+              try {
+                // Auto focus should be continuous for camera preview.
+                mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,
+                    CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+
+                // Finally, we start displaying the camera preview.
+                mPreviewRequest = mPreviewRequestBuilder.build();
+                mCaptureSession.setRepeatingRequest(mPreviewRequest, mCaptureCallback, null);
+              } catch (CameraAccessException e) {
+                Log.e(TAG, "onConfigured: ", e);
+              }
             }
 
-            mCaptureSession = cameraCaptureSession;
-            try {
-              // Auto focus should be continuous for camera preview.
-              mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,
-                  CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
-
-              // Finally, we start displaying the camera preview.
-              mPreviewRequest = mPreviewRequestBuilder.build();
-              mCaptureSession.setRepeatingRequest(mPreviewRequest, mCaptureCallback, null);
-            } catch (CameraAccessException e) {
-              e.printStackTrace();
+            @Override
+            public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
+              Log.d(TAG, "onConfigureFailed: ");
             }
-          }
-
-          @Override
-          public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
-            Log.d(TAG, "onConfigureFailed: ");
-          }
-        }, null);
+          }, null);
+    } catch (CameraAccessException e) {
+      Log.e(TAG, "startIfReady: ", e);
+    }
   }
+
+  private CameraCaptureSession.CaptureCallback mCaptureCallback
+      = new CameraCaptureSession.CaptureCallback() {
+
+    @Override
+    public void onCaptureProgressed(@NonNull CameraCaptureSession session,
+                                    @NonNull CaptureRequest request,
+                                    @NonNull CaptureResult partialResult) {
+      if (mCaptureSession != session) {
+        Log.w(TAG, "onCaptureProgressed: now this session");
+        return;
+      }
+      Log.v(TAG, "onCaptureProgressed: " + partialResult);
+
+    }
+
+    @Override
+    public void onCaptureCompleted(@NonNull CameraCaptureSession session,
+                                   @NonNull CaptureRequest request,
+                                   @NonNull TotalCaptureResult result) {
+      Log.v(TAG, "onCaptureProgressed: " + result);
+    }
+
+  };
 
   private void prepareRequestBuilder() {
     Log.d(TAG, "prepareRequestBuilder: ");
@@ -123,7 +158,7 @@ class Camera2Wrapper implements ICamera {
     if (mPreviewView == view) {
       return;
     }
-    Log.d(TAG, "setPreview: view=" + view);
+    Log.d(TAG, "setPreview: ");
 
     mPreviewView = view;
     if (view.isAvailable()) {
@@ -151,7 +186,7 @@ class Camera2Wrapper implements ICamera {
 
         @Override
         public void onSurfaceTextureUpdated(SurfaceTexture texture) {
-          Log.d(TAG, "onSurfaceTextureUpdated: ");
+          Log.v(TAG, "onSurfaceTextureUpdated: ");
         }
       });
 
@@ -192,7 +227,7 @@ class Camera2Wrapper implements ICamera {
 
   public void setCameraId(String id) {
     Log.d(TAG, "setCameraId() called with: id = [" + id + "]");
-    // TODO: 2018/12/6 check it wether could be change.
+    // TODO: 2018/12/6 check it whether could be change.
     mCameraId = id;
   }
 
@@ -232,6 +267,7 @@ class Camera2Wrapper implements ICamera {
 
     if (device != null) {
       mCameraDevice = device;
+      mStates.toState(State.OPEN);
     }
   }
 
@@ -242,6 +278,7 @@ class Camera2Wrapper implements ICamera {
     Log.d(TAG, "closeCameraDevice() called");
     mCameraDevice.close();
     mCameraDevice = null;
+    mStates.toState(State.IDLE);
   }
 
   @Override
