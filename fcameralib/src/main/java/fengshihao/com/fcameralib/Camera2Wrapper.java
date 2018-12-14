@@ -201,9 +201,8 @@ class Camera2Wrapper implements ICamera {
       return;
     }
     SurfaceTexture texture = mPreviewView.getSurfaceTexture();
-    texture.setDefaultBufferSize(w, h);
+    texture.setDefaultBufferSize(h, w);
     mPreviewSurface = new Surface(texture);
-
     mPreviewWidth = w;
     mPreviewHeight = h;
   }
@@ -278,7 +277,16 @@ class Camera2Wrapper implements ICamera {
     Log.d(TAG, "closeCameraDevice() called");
     mCameraDevice.close();
     mCameraDevice = null;
+    closeCameraSession();
     mStates.toState(State.IDLE);
+  }
+
+  private void closeCameraSession() {
+    if (mCaptureSession != null) {
+      Log.d(TAG, "closeCameraSession: ");
+      mCaptureSession.close();
+      mCaptureSession = null;
+    }
   }
 
   @Override
