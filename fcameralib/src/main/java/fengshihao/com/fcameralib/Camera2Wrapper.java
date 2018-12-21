@@ -49,7 +49,7 @@ class Camera2Wrapper implements ICamera {
     }
 
     if (!mStates.canGotoState(State.OPENING)) {
-      Log.e(TAG, "open: cant open");
+      Log.e(TAG, "open: can't open");
       return false;
     }
 
@@ -297,5 +297,11 @@ class Camera2Wrapper implements ICamera {
   @Override
   public void onPause() {
 
+  }
+
+  @Override
+  public void close() {
+    Log.d(TAG, "close: ");
+    closeCameraDevice();
   }
 }

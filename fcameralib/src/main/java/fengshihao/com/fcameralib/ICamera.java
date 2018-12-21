@@ -14,4 +14,6 @@ public interface ICamera {
 
   void onPause();
 
+  void close();
+
 }

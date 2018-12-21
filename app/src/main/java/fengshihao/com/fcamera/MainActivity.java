@@ -1,5 +1,6 @@
 package fengshihao.com.fcamera;
 
+import android.content.res.Configuration;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -25,6 +26,18 @@ public class MainActivity extends AppCompatActivity {
     mCamera = CameraHelper.createCamera();
     CameraHelper.getInstance().setContext(getApplication());
 
+  }
+  
+  @Override
+  protected void onSaveInstanceState(Bundle outBundle) {
+    super.onSaveInstanceState(outBundle);
+    Log.d(TAG, "onSaveInstanceState: ");
+  }
+
+  @Override
+  protected void onRestoreInstanceState(Bundle savedInstanceState) {
+    super.onRestoreInstanceState(savedInstanceState);
+    Log.d(TAG, "onRestoreInstanceState: ");
   }
 
 
@@ -60,6 +73,13 @@ public class MainActivity extends AppCompatActivity {
   protected void onDestroy() {
     super.onDestroy();
     Log.d(TAG, "onDestroy() called");
+    mCamera.close();
+  }
+
+  @Override
+  public void onConfigurationChanged(Configuration config) {
+    super.onConfigurationChanged(config);
+    Log.d(TAG, "onConfigurationChanged: ");
   }
 
 }
