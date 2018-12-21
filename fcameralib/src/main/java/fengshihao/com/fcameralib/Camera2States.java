@@ -50,4 +50,8 @@ public class Camera2States {
     }
     return false;
   }
+
+  State current() {
+    return mCurrentState;
+  }
 }

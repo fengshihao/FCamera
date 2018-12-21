@@ -49,7 +49,7 @@ class Camera2Wrapper implements ICamera {
     }
 
     if (!mStates.canGotoState(State.OPENING)) {
-      Log.e(TAG, "open: can't open");
+      Log.d(TAG, "open: can't open now is " + mStates.current());
       return false;
     }
 
